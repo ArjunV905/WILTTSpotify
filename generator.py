@@ -78,7 +78,6 @@ if (not readCreds()):
 # Using the credentials to create a spotipy object
 cache_handler = spotipy.cache_handler.CacheFileHandler(cache_path=cacheFolder)
 auth_manager = SpotifyOAuth(client_id=os.environ['SPOTIPY_CLIENT_ID'], client_secret=os.environ['SPOTIPY_CLIENT_SECRET'], cache_handler=cache_handler)
-#client_credentials_manager = SpotifyClientCredentials(client_id=os.environ['SPOTIPY_CLIENT_ID'], client_secret=os.environ['SPOTIPY_CLIENT_SECRET'], cache_handler=cache_handler)
 sp = spotipy.Spotify(auth_manager=auth_manager)
 
 # Ensuring valid credentials were obtained
