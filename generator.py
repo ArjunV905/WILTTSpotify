@@ -1,5 +1,5 @@
 import spotipy
-from spotipy.oauth2 import SpotifyOAuth #SpotifyClientCredentials
+from spotipy.oauth2 import SpotifyOAuth
 import os
 import sys
 
@@ -99,7 +99,6 @@ results = sp.search(q='artist:Sabai', type='track')
 items = results['tracks']['items']
 for i, t in enumerate(items):
     print("%d %s" % (i + 1, t['name']))
-    print(items[i]['id'])
     print(items[i]['uri'] + "\n")
 
     # Testing playlist adding
