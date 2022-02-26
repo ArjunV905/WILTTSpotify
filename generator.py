@@ -189,3 +189,4 @@ for i, t in enumerate(items):
     sp.playlist_add_items(playlist, [items[i]['uri']], position=None)
     print(strGreen("Added \"" + t['name'] +"\" to playlist \n"))
 
+# NOTE: Create an appropriate summary output which includes which playlist is being used (old, new, override), and other information
