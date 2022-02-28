@@ -303,8 +303,8 @@ filtered = filterCSV(csvLines)
 
 # Add the spotify links to the playlist
 # When adding, if value is -1, skip the line
+allTracks = sp.playlist_tracks(playlist)    # Avoiding the need to re-query the playlist
 for link in filtered:
-    allTracks = sp.playlist_tracks(playlist)    # Avoiding the need to re-query the playlist
     if (link != "-1" and isDupe(link, allTracks) == False):
         sp.user_playlist_add_tracks(username, playlist, [link])
         numAdded += 1
