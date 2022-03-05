@@ -170,18 +170,29 @@ def filterCSV(csvLines):
 
         # Checking if the line in linkCol is a spotify link
         if (line[linkCol].startswith("https://open.spotify.com/track/")):
-            filteredCSV.append(textCleaner(line[linkCol]))
+            filteredCSV.append(spotifyURL_ID(line[linkCol]))
         else:
             # Using the artist and song name to search for a spotify link
-            filteredCSV.append(findSpotifyLink(textCleaner(line[artistCol]), textCleaner(line[songTitleCol])))
+            filteredCSV.append(findSpotifyID(textCleaner(line[artistCol]), textCleaner(line[songTitleCol])))
     
 
     return filteredCSV
 
 #---------------------------------------------------------------------------------------
-# Finds a spotify link from the artist and song name
-def findSpotifyLink(artist, song) -> str:
-    # Searching for a spotify link
+# Returns the spotify id from the input url
+def spotifyURL_ID(url):
+    # Removing the "https://open.spotify.com/track/" from the url
+    url = url.replace("https://open.spotify.com/track/", "")
+
+    # Removing the "?" from the url
+    url = url[:url.find("?")]
+
+    return url
+
+#---------------------------------------------------------------------------------------
+# Finds a spotify ID from the artist and song name
+def findSpotifyID(artist, song) -> str:
+    # Searching for a spotify ID
     resultStr = ""
     results = sp.search(q='artist:' + artist + ' track:' + song, type='track')
 
@@ -195,13 +206,30 @@ def findSpotifyLink(artist, song) -> str:
     # If multiple results are found, add anyway 
     if (len(results['tracks']['items']) > 1):
         # Adding the first result
-        resultStr = results['tracks']['items'][0]['external_urls']['spotify']
+        resultStr = results['tracks']['items'][0]['id']
+        #resultStr = results['tracks']['items'][0]['external_urls']['spotify']
         print(strYellow("Found song: ") + strCyan(results['tracks']['items'][0]['name']) + (" by ") + strCyan(results['tracks']['items'][0]['artists'][0]['name']))
     else:   # Single spotify link found [Appears that spotify never gives a single result]
-        resultStr = results['tracks']['items'][0]['external_urls']['spotify']
+        resultStr = results['tracks']['items'][0]['id']
 
     # If a single result is found, return the spotify link
     return resultStr
+
+#---------------------------------------------------------------------------------------
+# Checks all the read IDs to remove any duplicates
+def removeDuplicates(filteredCSV):
+    print("\nChecking for duplicate IDs from the csv file...")
+    for i in range(len(filteredCSV)):
+        for j in range(i + 1, len(filteredCSV)):
+            if (filteredCSV[i] == filteredCSV[j] and filteredCSV[i] != "-1"):
+                spotTrack = sp.track(filteredCSV[i])
+                message = strYellow("Duplicate found in csv file: ") + strCyan(spotTrack['name'] + " by " + spotTrack['artists'][0]['name'])
+                print(message)
+                dupeLines.append(message)
+                filteredCSV[i] = "-1"
+    
+    print("\n")
+    return filteredCSV
 
 #---------------------------------------------------------------------------------------
 # Using the credentials to authenticate and create a spotipy object
@@ -300,11 +328,12 @@ if (defaultPlaylist):
 # Reading the csv file
 csvLines = readCSV()
 filtered = filterCSV(csvLines)
+finalIDs = removeDuplicates(filtered)
 
 # Add the spotify links to the playlist
 # When adding, if value is -1, skip the line
 allTracks = sp.playlist_tracks(playlist)    # Avoiding the need to re-query the playlist
-for link in filtered:
+for link in finalIDs:
     if (link != "-1" and isDupe(link, allTracks) == False):
         sp.user_playlist_add_tracks(username, playlist, [link])
         numAdded += 1
