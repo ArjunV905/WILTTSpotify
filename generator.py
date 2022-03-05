@@ -16,6 +16,7 @@ linesRead = 0
 
 failedLines = []
 dupeLines = []
+uncertainLines = []
 
 songTitleCol = 3 # Column number in the .csv file - 1
 artistCol = 4
@@ -207,14 +208,27 @@ def findSpotifyID(artist, song) -> str:
     if (len(results['tracks']['items']) > 1):
         # Adding the first result
         resultStr = results['tracks']['items'][0]['id']
-        #resultStr = results['tracks']['items'][0]['external_urls']['spotify']
         print(strYellow("Found song: ") + strCyan(results['tracks']['items'][0]['name']) + (" by ") + strCyan(results['tracks']['items'][0]['artists'][0]['name']))
-    else:   # Single spotify link found [Appears that spotify never gives a single result]
+    else:   # Single spotify ID found [Appears that spotify never gives a single result]
         resultStr = results['tracks']['items'][0]['id']
 
-    # If a single result is found, return the spotify link
+    # Checks if there is uncertianity in the result
+    compareNames(artist, song, results)
+    # If a single result is found, return the spotify ID
     return resultStr
 
+#---------------------------------------------------------------------------------------
+# Compares the read artist and song name with the names from the Spotify query (Returns true if they match)
+def compareNames(artist, song, results):
+    # Compare the lowercase artist and song name with the lowercase artist and song name from the Spotify query
+    #if (artist.lower() == results['artists'][0]['name'].lower() and song.lower() == results['name'].lower()):
+    if (artist.lower() == results['tracks']['items'][0]['artists'][0]['name'].lower() and song.lower() == results['tracks']['items'][0]['name'].lower()):
+        return True
+    else:
+        message = strYellow("Mismatch in names found for input: ") + strCyan(song) + strYellow(" by ") + strCyan(artist) + strYellow(" \n\tand Spotify Song: ") + strCyan(results['tracks']['items'][0]['name']) + (" by ") + strCyan(results['tracks']['items'][0]['artists'][0]['name'])
+        #print(message)
+        uncertainLines.append(message)
+        return False
 #---------------------------------------------------------------------------------------
 # Checks all the read IDs to remove any duplicates
 def removeDuplicates(filteredCSV):
@@ -223,7 +237,7 @@ def removeDuplicates(filteredCSV):
         for j in range(i + 1, len(filteredCSV)):
             if (filteredCSV[i] == filteredCSV[j] and filteredCSV[i] != "-1"):
                 spotTrack = sp.track(filteredCSV[i])
-                message = strYellow("Duplicate found in csv file: ") + strCyan(spotTrack['name'] + " by " + spotTrack['artists'][0]['name'])
+                message = strYellow("Duplicate found in csv file: ") + strCyan(spotTrack['name']) + strYellow(" by ") + strCyan(spotTrack['artists'][0]['name'])
                 print(message)
                 dupeLines.append(message)
                 filteredCSV[i] = "-1"
@@ -280,7 +294,7 @@ def isDupe(link, playlistTracks):
         # Compare the tracks by id
         if (track['track']['id'] == sp.track(link)['id']):
         #if (track['track']['external_urls']['spotify'] == link):
-            dupeLine = strYellow("Song already in playlist: ") + strCyan(track['track']['name']) + strYellow(" by ") + strCyan(track['track']['artists'][0]['name'])
+            dupeLine = strYellow("Duplicate found in Spotify playlist: ") + strCyan(track['track']['name']) + strYellow(" by ") + strCyan(track['track']['artists'][0]['name'])
             print(dupeLine)
             dupeLines.append(dupeLine)
             print("Skipping track...")
@@ -347,6 +361,14 @@ print("-------------------------------------------[Summary]---------------------
 if (len(dupeLines) > 0):   
     for dupe in dupeLines:
         print(dupe)
+
+#   [Uncertain Lines]
+if (len(uncertainLines) > 0):
+    print("\n")
+    for uncertain in uncertainLines:
+        print(uncertain)
+    print("NOTE: The above mismatches have been added to the playlist (Unless they were duplicates)")
+    print("\n")
 
 #   [Failed Lines]
 if (len(failedLines) > 0):
