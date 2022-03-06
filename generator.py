@@ -11,9 +11,9 @@ cacheFolder = os.path.join(sys.path[0], ".cache")
 playlistTitle = "What I'm Listening to Today"
 
 playlist = ""
-numAdded = 0
 linesRead = 0
 
+addedLines = []
 failedLines = []
 dupeLines = []
 uncertainLines = []
@@ -22,6 +22,9 @@ songTitleCol = 3 # Column number in the .csv file - 1
 artistCol = 4
 linkCol = 5
 
+addSuccessStr = ""
+failedHeadStr = ""
+dupeHeadStr = ""
 #----------------------------------[Methods]--------------------------------------------
 # For printing colored text
 def strRed(str): return("\033[91m{}\033[00m".format(str))
@@ -36,6 +39,19 @@ def textCleaner(str):
     newStr = newStr.replace("\'", "")
     newStr = newStr.replace("\n", "")
     return newStr
+
+#---------------------------------------------------------------------------------------
+# Removes any color characters from the string
+def removeColorChars(str):
+    str = str.replace("\033[91m", "") # Red
+    str = str.replace("\033[92m", "") # Green
+    str = str.replace("\033[93m", "") # Yellow
+    str = str.replace("\033[96m", "") # Cyan
+
+    str = str.replace("\033[00m", "") # Reset
+
+    return str
+
 #---------------------------------------------------------------------------------------
 # Read ClientID and ClientSecret from config.txt
 def readCreds() -> bool:
@@ -193,13 +209,16 @@ def spotifyURL_ID(url):
 #---------------------------------------------------------------------------------------
 # Finds a spotify ID from the artist and song name
 def findSpotifyID(artist, song) -> str:
+    global failedHeadStr
+
     # Searching for a spotify ID
     resultStr = ""
     results = sp.search(q='artist:' + artist + ' track:' + song, type='track')
 
     # If no results are found, output a warning
     if (results['tracks']['items'] == []):
-        outputLine = strRed("No results found for Song: ") + strCyan(song) + strRed(" and Artist: ") + strCyan(artist)
+        failedHeadStr = "No results found for Song: "
+        outputLine = strRed(failedHeadStr) + strCyan(song) + strRed(" by ") + strCyan(artist)
         print(outputLine)
         failedLines.append(outputLine)
         return "-1"
@@ -221,7 +240,6 @@ def findSpotifyID(artist, song) -> str:
 # Compares the read artist and song name with the names from the Spotify query (Returns true if they match)
 def compareNames(artist, song, results):
     # Compare the lowercase artist and song name with the lowercase artist and song name from the Spotify query
-    #if (artist.lower() == results['artists'][0]['name'].lower() and song.lower() == results['name'].lower()):
     if (artist.lower() == results['tracks']['items'][0]['artists'][0]['name'].lower() and song.lower() == results['tracks']['items'][0]['name'].lower()):
         return True
     else:
@@ -302,6 +320,51 @@ def isDupe(link, playlistTracks):
 
     return False
 
+#---------------------------------------------------------------------------------------
+# Creates a log file containing playlist modification info in the log folder
+def createLogFile():
+    print("\nCreating log file...")
+
+    # Create the log folder if it doesn't exist
+    if not os.path.exists(os.path.join(sys.path[0], "logs")):
+        os.makedirs(os.path.join(sys.path[0], "logs"))
+    
+    # Create the log file based on the os path
+    logFileName = str(datetime.datetime.now().strftime("%Y-%m-%d %H.%M.%S")) + "-log.txt"
+    logFilePath = os.path.join(sys.path[0], "logs", logFileName)
+    logFile = open(logFilePath, "w+")
+
+    # Writing the headers
+    logFile.write("User ID: " + username + "\n")
+    logFile.write("Playlist: " + sp.user_playlist(username, playlist)['name'] + "\n")
+    
+    # Write the song additions
+    if (len(addedLines) > 0):  
+        logFile.write("\nAdded Songs:\n")
+        for line in addedLines:
+            line = line.replace(addSuccessStr, "")
+            logFile.write("\t" + removeColorChars(line) + "\n")
+
+    # Write the failed songs
+    if (len(failedLines) > 0):
+        logFile.write("\nFailed Songs:\n")
+        for line in failedLines:
+            line = line.replace(failedHeadStr, "")
+            logFile.write("\t" + removeColorChars(line) + "\n")
+
+    # Write the duplicate songs
+    if (len(dupeLines) > 0):
+        logFile.write("\nDuplicate Songs:\n")
+        for line in dupeLines:
+            line = line.replace(dupeHeadStr, "")
+            logFile.write("\t" + removeColorChars(line) + "\n")
+    logFile.close()
+
+    # Write the uncertain songs
+
+    print("Log file successfully created as: " + strCyan(logFileName))
+    
+
 #------------------------------------[Main]---------------------------------------------
 # Checking if the credentials have been stored
 if (not readCreds()):
@@ -350,8 +413,10 @@ allTracks = sp.playlist_tracks(playlist)    # Avoiding the need to re-query the 
 for link in finalIDs:
     if (link != "-1" and isDupe(link, allTracks) == False):
         sp.user_playlist_add_tracks(username, playlist, [link])
-        numAdded += 1
-        print(strGreen("Successfully added song: ") + strCyan(sp.track(link)['name']) + strGreen(" by ") + strCyan(sp.artist(sp.track(link)['artists'][0]['id'])['name']))
+        addSuccessStr = "Successfully added song: "
+        message = strGreen(addSuccessStr) + strCyan(sp.track(link)['name']) + strGreen(" by ") + strCyan(sp.artist(sp.track(link)['artists'][0]['id'])['name'])
+        print(message)
+        addedLines.append(message)
 
 # ______________________
 # Summary output section
@@ -375,11 +440,22 @@ if (len(failedLines) > 0):
     for failed in failedLines:
         print(failed)
 
-#   [Values]
+#   [User and Playlist Info]
 print("\n")
-print("Lines read: " + str(linesRead) + "\tLines added: " + strGreen(str(numAdded)) + "\tDuplicate lines: " + strYellow(str(len(dupeLines))) + "\tFailed lines: " + strRed(str(len(failedLines))))
+playlistTypeStr = "default"
+if (not defaultPlaylist):
+    playlistTypeStr = "overridden"
+
+print("Added to " + strCyan(sp.current_user()['display_name']) + "'s " + playlistTypeStr + " playlist: " + strCyan(sp.user_playlist(username, playlist)['name']))
+
+#   [Values]
+print("Lines read: " + str(linesRead) + "\tLines added: " + strGreen(str(len(addedLines))) + "\tDuplicate lines: " + strYellow(str(len(dupeLines))) + "\tFailed lines: " + strRed(str(len(failedLines))))
+
+#   [Log file]
+if (linesRead > 0):
+    # Calling log file creation function
+    createLogFile()
+    # Print statement
 
 
-# TODO: Create a way to check weird irregularities like with the "The Sex Pistols" occurrence
-
-
+input("\nPress Enter to exit...")
