@@ -24,7 +24,9 @@ linkCol = 5
 
 addSuccessStr = ""
 failedHeadStr = ""
-dupeHeadStr = ""
+dupeHeadSpStr = ""
+dupeHeadLocalStr = ""
+mismatchHeadStr = ""
 #----------------------------------[Methods]--------------------------------------------
 # For printing colored text
 def strRed(str): return("\033[91m{}\033[00m".format(str))
@@ -239,23 +241,27 @@ def findSpotifyID(artist, song) -> str:
 #---------------------------------------------------------------------------------------
 # Compares the read artist and song name with the names from the Spotify query (Returns true if they match)
 def compareNames(artist, song, results):
+    global mismatchHeadStr
     # Compare the lowercase artist and song name with the lowercase artist and song name from the Spotify query
     if (artist.lower() == results['tracks']['items'][0]['artists'][0]['name'].lower() and song.lower() == results['tracks']['items'][0]['name'].lower()):
         return True
     else:
-        message = strYellow("Mismatch in names found for input: ") + strCyan(song) + strYellow(" by ") + strCyan(artist) + strYellow(" \n\tand Spotify Song: ") + strCyan(results['tracks']['items'][0]['name']) + (" by ") + strCyan(results['tracks']['items'][0]['artists'][0]['name'])
+        mismatchHeadStr = "Mismatch in names found for "
+        message = strYellow(mismatchHeadStr + "Input: ") + strCyan(song) + strYellow(" by ") + strCyan(artist) + strYellow(" \n\tand Spotify Song: ") + strCyan(results['tracks']['items'][0]['name']) + (" by ") + strCyan(results['tracks']['items'][0]['artists'][0]['name'])
         #print(message)
         uncertainLines.append(message)
         return False
 #---------------------------------------------------------------------------------------
 # Checks all the read IDs to remove any duplicates
 def removeDuplicates(filteredCSV):
+    global dupeHeadLocalStr
     print("\nChecking for duplicate IDs from the csv file...")
     for i in range(len(filteredCSV)):
         for j in range(i + 1, len(filteredCSV)):
             if (filteredCSV[i] == filteredCSV[j] and filteredCSV[i] != "-1"):
                 spotTrack = sp.track(filteredCSV[i])
-                message = strYellow("Duplicate found in csv file: ") + strCyan(spotTrack['name']) + strYellow(" by ") + strCyan(spotTrack['artists'][0]['name'])
+                dupeHeadLocalStr = "Duplicate found in csv file: "
+                message = strYellow(dupeHeadLocalStr) + strCyan(spotTrack['name']) + strYellow(" by ") + strCyan(spotTrack['artists'][0]['name'])
                 print(message)
                 dupeLines.append(message)
                 filteredCSV[i] = "-1"
@@ -303,6 +309,7 @@ def playlistHandler():
 #---------------------------------------------------------------------------------------
 # Checks if the playlist already contains the song
 def isDupe(link, playlistTracks):
+    global dupeHeadSpStr
     # Checks if the playlist is empty 
     if (sp.playlist(playlist)['tracks']['total'] == 0):
         return False
@@ -311,8 +318,8 @@ def isDupe(link, playlistTracks):
     for track in playlistTracks['items']:
         # Compare the tracks by id
         if (track['track']['id'] == sp.track(link)['id']):
-        #if (track['track']['external_urls']['spotify'] == link):
-            dupeLine = strYellow("Duplicate found in Spotify playlist: ") + strCyan(track['track']['name']) + strYellow(" by ") + strCyan(track['track']['artists'][0]['name'])
+            dupeHeadSpStr = "Duplicate found in Spotify playlist: "
+            dupeLine = strYellow(dupeHeadSpStr) + strCyan(track['track']['name']) + strYellow(" by ") + strCyan(track['track']['artists'][0]['name'])
             print(dupeLine)
             dupeLines.append(dupeLine)
             print("Skipping track...")
@@ -356,12 +363,26 @@ def createLogFile():
     if (len(dupeLines) > 0):
         logFile.write("\nDuplicate Songs:\n")
         for line in dupeLines:
-            line = line.replace(dupeHeadStr, "")
+            line = line.replace(dupeHeadSpStr, "")
+            line = line.replace(dupeHeadLocalStr, "")
             logFile.write("\t" + removeColorChars(line) + "\n")
-    logFile.close()
 
     # Write the uncertain songs
+    if (len(uncertainLines) > 0):
+        logFile.write("\nUncertain Songs:\n")
+        for line in uncertainLines:
+            line = line.replace(mismatchHeadStr, "")
+            logFile.write("\t" + removeColorChars(line) + "\n\n")
+    
+    # Write the summary line 
+    logFile.write("\nSummary:\n")
+    logFile.write(str(linesRead) + " songs read from file(s)\n")
+    logFile.write(str(len(addedLines)) + " songs added\n")
+    logFile.write(str(len(dupeLines)) + " duplicate songs\n")
+    logFile.write(str(len(failedLines)) + " songs failed\n")
+    logFile.write(str(len(uncertainLines)) + " uncertain songs\n")
 
+    logFile.close()
     print("Log file successfully created as: " + strCyan(logFileName))
     
 
