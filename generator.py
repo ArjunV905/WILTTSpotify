@@ -58,7 +58,13 @@ def removeColorChars(str):
 # Read ClientID and ClientSecret from config.txt
 def readCreds() -> bool:
     print("\nAttempting to read credentials from config.txt...")
-    file = open(os.path.join(sys.path[0], "config.txt"), 'r')
+    try:
+        file = open(os.path.join(sys.path[0], "config.txt"), 'r')
+    except FileNotFoundError as e:
+        print(strRed("\nError: config.txt not found."))
+        print(e)
+        input("Press enter to exit...")
+        sys.exit()
     fileList = file.readlines()
 
     # Reading Client ID
