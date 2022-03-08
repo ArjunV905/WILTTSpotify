@@ -6,7 +6,7 @@ import datetime
 
 #----------------------------------[Fields]---------------------------------------------
 os.environ['SPOTIPY_REDIRECT_URI'] = 'http://localhost:8888'
-cacheFolder = os.path.join(sys.path[0], ".cache")
+os.system("")  # To enable ansii escape characters in the terminal
 
 playlistTitle = "What I'm Listening to Today"
 
@@ -28,6 +28,18 @@ dupeHeadSpStr = ""
 dupeHeadLocalStr = ""
 mismatchHeadStr = ""
 #----------------------------------[Methods]--------------------------------------------
+# Checks if the program is running as a script or frozen executable and sets the path accordingly
+def setPath():
+    global cacheFolder
+
+    if getattr(sys, 'frozen', False):
+        bundleDir = os.path.dirname(sys.executable)
+    else:
+        bundleDir = sys.path[0]
+
+    return bundleDir
+
+#---------------------------------------------------------------------------------------
 # For printing colored text
 def strRed(str): return("\033[91m{}\033[00m".format(str))
 def strGreen(str): return("\033[92m{}\033[00m".format(str))
@@ -59,7 +71,8 @@ def removeColorChars(str):
 def readCreds() -> bool:
     print("\nAttempting to read credentials from config.txt...")
     try:
-        file = open(os.path.join(sys.path[0], "config.txt"), 'r')
+        #file = open(os.path.join(sys.path[0], "config.txt"), 'r')
+        file = open(os.path.join(bundleDir, "config.txt"), 'r')
     except FileNotFoundError as e:
         print(strRed("\nError: config.txt not found."))
         print(e)
@@ -110,7 +123,7 @@ def readCreds() -> bool:
 # Read the playlist url from the config.txt file
 def readPlaylist() -> bool:
     print("Checking if there is a playlist URL in config.txt...")
-    file = open(os.path.join(sys.path[0], "config.txt"), 'r')
+    file = open(os.path.join(bundleDir, "config.txt"), 'r')
     fileList = file.readlines()
 
     # Reading playlist url
@@ -142,7 +155,7 @@ def readCSV():
     global linesRead
     
     print("\nReading all .csv files in the folder...")
-    csvFiles = os.listdir(sys.path[0])
+    csvFiles = os.listdir(bundleDir)
     csvList = []
 
     for file in csvFiles:
@@ -162,7 +175,7 @@ def readCSV():
     csvLines = []
     for file in csvList:
         print("Reading file: " + strCyan(file))
-        csvFile = open(os.path.join(sys.path[0], file), 'r')
+        csvFile = open(os.path.join(bundleDir, file), 'r')
 
         # Removes the first line (header) from being stored
         csvFile.readline()
@@ -393,6 +406,9 @@ def createLogFile():
     
 
 #------------------------------------[Main]---------------------------------------------
+bundleDir = setPath()
+cacheFolder = os.path.join(bundleDir, ".cache")
+
 # Checking if the credentials have been stored
 if (not readCreds()):
     print(strRed("Error: Could not read/find credentials from config.txt"))
