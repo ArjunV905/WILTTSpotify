@@ -30,8 +30,6 @@ mismatchHeadStr = ""
 #----------------------------------[Methods]--------------------------------------------
 # Checks if the program is running as a script or frozen executable and sets the path accordingly
 def setPath():
-    global cacheFolder
-
     if getattr(sys, 'frozen', False):
         bundleDir = os.path.dirname(sys.executable)
     else:
