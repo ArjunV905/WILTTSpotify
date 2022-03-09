@@ -1,2 +1,8 @@
 # WISTTSpotify
-Generates Spotify playlists with songs read from a csv file
+
+Generates a Spotify playlist with songs read from a csv file
+
+### Usage
+
+
+### Installation
