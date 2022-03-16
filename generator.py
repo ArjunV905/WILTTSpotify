@@ -350,12 +350,12 @@ def createLogFile():
     print("\nCreating log file...")
 
     # Create the log folder if it doesn't exist
-    if not os.path.exists(os.path.join(sys.path[0], "logs")):
-        os.makedirs(os.path.join(sys.path[0], "logs"))
+    if not os.path.exists(os.path.join(bundleDir, "logs")):
+        os.makedirs(os.path.join(bundleDir, "logs"))
     
     # Create the log file based on the os path
     logFileName = str(datetime.datetime.now().strftime("%Y-%m-%d %H.%M.%S")) + "-log.txt"
-    logFilePath = os.path.join(sys.path[0], "logs", logFileName)
+    logFilePath = os.path.join(bundleDir, "logs", logFileName)
     logFile = open(logFilePath, "w+")
 
     # Writing the headers
