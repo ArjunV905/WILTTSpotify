@@ -11,6 +11,7 @@ os.system("")  # To enable ansii escape characters in the terminal
 playlistTitle = "What I'm Listening to Today"
 
 playlist = ""
+csvFilesLst = []
 linesRead = 0
 
 addedLines = []
@@ -151,7 +152,8 @@ def readPlaylist() -> bool:
 # Reads all of the .csv files and returns an array of the lines read
 def readCSV():
     global linesRead
-    
+    global csvFilesLst
+
     print("\nReading all .csv files in the folder...")
     csvFiles = os.listdir(bundleDir)
     csvList = []
@@ -190,6 +192,7 @@ def readCSV():
         csvFile.close()
 
     print("\nRead " + strCyan(str(len(csvList))) + " .csv files.\n")
+    csvFilesLst = csvList
     return csvLines
 
 #---------------------------------------------------------------------------------------
@@ -268,6 +271,7 @@ def compareNames(artist, song, results):
         #print(message)
         uncertainLines.append(message)
         return False
+
 #---------------------------------------------------------------------------------------
 # Checks all the read IDs to remove any duplicates
 def removeDuplicates(filteredCSV):
@@ -347,6 +351,8 @@ def isDupe(link, playlistTracks):
 #---------------------------------------------------------------------------------------
 # Creates a log file containing playlist modification info in the log folder
 def createLogFile():
+    global csvFilesLst
+
     print("\nCreating log file...")
 
     # Create the log folder if it doesn't exist
@@ -362,6 +368,11 @@ def createLogFile():
     logFile.write("User ID: " + username + "\n")
     logFile.write("Playlist: " + sp.user_playlist(username, playlist)['name'] + "\n")
     
+    # Write the csv files that were read
+    logFile.write("\n.csv Files Read:\n")
+    for file in csvFilesLst:
+        logFile.write("\t" + file + "\n")
+
     # Write the song additions
     if (len(addedLines) > 0):  
         logFile.write("\nAdded Songs:\n")
@@ -398,6 +409,7 @@ def createLogFile():
     logFile.write(str(len(dupeLines)) + " duplicate songs\n")
     logFile.write(str(len(failedLines)) + " songs failed\n")
     logFile.write(str(len(uncertainLines)) + " uncertain songs\n")
+    logFile.write(str(len(csvFilesLst)) + " csv files read\n")
 
     logFile.close()
     print("Log file successfully created as: " + strCyan(logFileName))
