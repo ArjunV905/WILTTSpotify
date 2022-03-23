@@ -506,9 +506,7 @@ print("Lines read: " + str(linesRead) + "\tLines added: " + strGreen(str(len(add
 
 #   [Log file]
 if (linesRead > 0):
-    # Calling log file creation function
     createLogFile()
-    # Print statement
 
 
 input("\nPress Enter to exit...")
