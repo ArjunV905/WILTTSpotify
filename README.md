@@ -13,7 +13,9 @@ need to provide the config.txt file a link to the playlist you want to add to.
 
 #### Downloading
 First, download the project using GitHub's "Download Zip" option or by using 
-``git clone https://github.com/ArjunV905/WILTTSpotify``
+```
+git clone https://github.com/ArjunV905/WILTTSpotify
+```
 
 #### Setting up a Spotify Developer account and App
 To set up your Spotify developer account, head to https://developer.spotify.com/dashboard/login and login with a 
