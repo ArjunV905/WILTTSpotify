@@ -1,4 +1,4 @@
-# WISTTSpotify
+# WILTTSpotify
 
 Generates a Spotify playlist with songs read from a csv file
 
